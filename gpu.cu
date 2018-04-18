@@ -84,9 +84,6 @@ __global__ void move_gpu (particle_t * particles, int n, double size)
     p->x  += p->vx * dt;
     p->y  += p->vy * dt;
 
-    //
-    //  bounce from walls
-    //
     while( p->x < 0 || p->x > size )
     {
         p->x  = p->x < 0 ? -(p->x) : 2*size-p->x;
@@ -100,22 +97,21 @@ __global__ void move_gpu (particle_t * particles, int n, double size)
 
 }
 
-__global__ void reassign_bins (particle_t* particles, sampleBin* bins, int n, int num_bins, double bin_side, int n_cols) {
+__global__ void reassign_bins (particle_t* particles, sampleBin* bins, int roll, int num_bins, double bin_side, int n_cols) {
     int tid = threadIdx.x + blockIdx.x * blockDim.x;
     if(tid >= num_bins) return;
 
     sampleBin &bin = bins[tid];
     bin.length = 0;
-    for (int i=0; i<n; i++) {
+    for (int i = 0; i < roll; i++) {
         int x_ind = floor(particles[i].x / bin_side);
         int y_ind = floor(particles[i].y / bin_side);
-        if (x_ind*n_cols + y_ind == tid) {
+        if (x_ind * n_cols + y_ind == tid) {
             bin.particles[bin.length] = i;
             bin.length += 1;
         }
     }
 }
-
 
 
 int main( int argc, char **argv )
@@ -155,11 +151,11 @@ int main( int argc, char **argv )
 
     int n_rows = ceil(sqrt(NUM_THREADS));
     int n_cols = n_rows;
-    int nlocal = n_rows * n_cols;
+    int cross = n_rows * n_cols;
     double bin_side = size / n_rows;
 
-    sampleBin* cpu_bins = (Bin* ) malloc(nlocal * sizeof(Bin));
-    for (int i = 0; i < nlocal; i++) {
+    sampleBin* cpu_bins = (Bin* ) malloc(cross * sizeof(Bin));
+    for (int i = 0; i < cross; i++) {
         cpu_bins[i] = sampleBin();
         cpu_bins[i].length = 0;
         for (int j = 0; j< num_particles_per_bin; j++) {
@@ -175,9 +171,9 @@ int main( int argc, char **argv )
     }
 
     sampleBin* gpu_bins;
-    cudaMalloc((void **) &gpu_bins, nlocal * sizeof(sampleBin));
+    cudaMalloc((void **) &gpu_bins, cross * sizeof(sampleBin));
 
-    cudaMemcpy(gpu_bins, cpu_bins, nlocal * sizeof(sampleBin), cudaMemcpyHostToDevice);
+    cudaMemcpy(gpu_bins, cpu_bins, cross * sizeof(sampleBin), cudaMemcpyHostToDevice);
 
     cudaThreadSynchronize();
     copy_time = read_timer( ) - copy_time;
@@ -189,7 +185,7 @@ int main( int argc, char **argv )
     double simulation_time = read_timer( );
     int blks = (n + NUM_THREADS - 1) / NUM_THREADS;
     int sqrt_num_threads = floor(sqrt(NUM_THREADS));
-    int bin_blks = (nlocal + sqrt_num_threads - 1 ) / sqrt_num_threads;
+    int bin_blks = (cross + sqrt_num_threads - 1 ) / sqrt_num_threads;
     for( int step = 0; step < NSTEPS; step++ )
     {
         //
@@ -211,7 +207,7 @@ int main( int argc, char **argv )
                 printf("1. %s \n", cudaGetErrorString(error));
                 exit(1);
             }
-            for (int i = 0; i < nlocal; i++) {
+            for (int i = 0; i < cross; i++) {
                 cpu_bins[i].length = 0;
             }
 
@@ -221,7 +217,7 @@ int main( int argc, char **argv )
                 cpu_bins[x_ind*n_cols + y_ind].particles[cpu_bins[x_ind*n_cols + y_ind].length] = i;
                 cpu_bins[x_ind*n_cols + y_ind].length += 1;
             }
-            cudaError_t error1 = cudaMemcpy(gpu_bins, cpu_bins, nlocal * sizeof(sampleBin), cudaMemcpyHostToDevice);
+            cudaError_t error1 = cudaMemcpy(gpu_bins, cpu_bins, cross * sizeof(sampleBin), cudaMemcpyHostToDevice);
             if (error1 != cudaSuccess) {
                 printf("2. %s \n", cudaGetErrorString(error1));
                 exit(1);
