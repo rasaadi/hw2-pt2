@@ -45,9 +45,9 @@ __global__ void assign_bins_gpu(particle_t * particles, int n, particle_t * bins
     int i = 0;
 	while(i < n){
 		int binNumber = get_particle_bin_number_count(particles[i],binNumbPerSide);
-        int indexInBin = binSizes[binNumber];
-        bins[binNumber*n + indexInBin] = particles[i];
-        binSizes[binNumber] ++;
+		int indexInBin = binSizes[binNumber];
+		bins[binNumber*n + indexInBin] = particles[i];
+		binSizes[binNumber] ++;
 		
 		i++;		
 	}
@@ -116,14 +116,14 @@ __global__ void compute_forces_gpu(particle_t * particles, int n, particle_t * b
 		while(j <= highj){
 			int nbin = cbin + i + binNumbPerSide*j;
             
-            for (int indexInBin = 0; indexInBin < binSizes[nbin]; indexInBin++) {
-                apply_force_gpu(particles[tid], bins[nbin*n + indexInBin]);
-            }
+		    for (int indexInBin = 0; indexInBin < binSizes[nbin]; indexInBin++) {
+			apply_force_gpu(particles[tid], bins[nbin*n + indexInBin]);
+		    }
 			
-			j++;			
+		j++;			
 		}
 		
-		i++;		
+	i++;		
 	}
 	
 }
@@ -233,8 +233,8 @@ int main( int argc, char **argv )
         
         assign_bins_gpu <<< 1, 1 >>> (d_particles, n, d_bins, numbOfBins, binNumbPerSide, d_binSizes);
 
-		int blks = (n + NUM_THREADS - 1) / NUM_THREADS;
-		compute_forces_gpu <<< blks, NUM_THREADS >>> (d_particles, n, d_bins, numbOfBins, binNumbPerSide, d_binSizes);
+	int blks = (n + NUM_THREADS - 1) / NUM_THREADS;
+	compute_forces_gpu <<< blks, NUM_THREADS >>> (d_particles, n, d_bins, numbOfBins, binNumbPerSide, d_binSizes);
         
         //
         //  move particles
@@ -248,7 +248,7 @@ int main( int argc, char **argv )
 	    // Copy the particles back to the CPU
             cudaMemcpy(particles, d_particles, n * sizeof(particle_t), cudaMemcpyDeviceToHost);
             save( fsave, n, particles);
-		}
+	}
     }
 	
     cudaThreadSynchronize();
@@ -261,7 +261,7 @@ int main( int argc, char **argv )
 	fprintf(fsum,"%d %lf \n",n,simulation_time);
 
     if (fsum)
-		fclose( fsum );   
+	fclose( fsum );   
 	
     free( particles );
     free( bins );
