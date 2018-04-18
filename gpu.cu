@@ -35,29 +35,19 @@ __global__ void assign_bins_gpu(particle_t * particles, int n, particle_t * bins
 	while(m < numbOfBins){
 		binSizes[m] = 0;
 		
-		m++;
-		
-	}
-	
- //   for (int m = 0; m < numbOfBins; m++) {
- //       binSizes[m] = 0;
- //  }
-    int i = 0;
+		m++;		
+	}	
+
+    	int i = 0;
 	while(i < n){
 		int binNumber = get_particle_bin_number_count(particles[i],binNumbPerSide);
-        int indexInBin = binSizes[binNumber];
-        bins[binNumber*n + indexInBin] = particles[i];
-        binSizes[binNumber] ++;
-		
+		int indexInBin = binSizes[binNumber];
+		bins[binNumber*n + indexInBin] = particles[i];
+		binSizes[binNumber] ++;
+
 		i++;		
-	}
-    
-//	for (int i = 0; i < n; i++) {
-//        int binNumber = get_particle_bin_number_count(particles[i],binNumbPerSide);
-//        int indexInBin = binSizes[binNumber];
-//        bins[binNumber*n + indexInBin] = particles[i];
-//        binSizes[binNumber] ++;
-//    }
+	}    
+
 }
 
 
@@ -96,29 +86,18 @@ __global__ void compute_forces_gpu(particle_t * particles, int n, particle_t * b
     if (cbin % binNumbPerSide == 0) lowi = 0;
     if (cbin % binNumbPerSide == (binNumbPerSide-1)) highi = 0;
     if (cbin >= binNumbPerSide*(binNumbPerSide-1)) highj = 0;
-    
-//    for (int i = lowi; i <= highi; i++) {
-//        for (int j = lowj; j <= highj; j++)
-//        {
-//            int nbin = cbin + i + binNumbPerSide*j;
-//            
-//            for (int indexInBin = 0; indexInBin < binSizes[nbin]; indexInBin++) {
-//                apply_force_gpu(particles[tid], bins[nbin*n + indexInBin]);
-//            }            
-//        }
- //   }
 	
 	int i = lowi;
 	int j = lowj;
 	
 	while(i <= highi){
-		
+			
 		while(j <= highj){
 			int nbin = cbin + i + binNumbPerSide*j;
-            
-            for (int indexInBin = 0; indexInBin < binSizes[nbin]; indexInBin++) {
-                apply_force_gpu(particles[tid], bins[nbin*n + indexInBin]);
-            }
+
+			    for (int indexInBin = 0; indexInBin < binSizes[nbin]; indexInBin++) {
+				apply_force_gpu(particles[tid], bins[nbin*n + indexInBin]);
+			    }
 			
 			j++;			
 		}
@@ -258,10 +237,10 @@ int main( int argc, char **argv )
     printf( "n = %d, simulation time = %g seconds\n", n, simulation_time );
 
     if (fsum)
-		fprintf(fsum,"%d %lf \n",n,simulation_time);
+	fprintf(fsum,"%d %lf \n",n,simulation_time);
 
     if (fsum)
-		fclose( fsum );   
+	fclose( fsum );   
 	
     free( particles );
     free( bins );
@@ -272,6 +251,4 @@ int main( int argc, char **argv )
         fclose( fsave );
     
     return 0;
-
-    // New commit
 }
