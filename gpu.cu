@@ -183,7 +183,7 @@ int main( int argc, char **argv )
     //
     cudaThreadSynchronize();
     double simulation_time = read_timer( );
-    int blks = (n + NUM_THREADS - 1) / NUM_THREADS;
+    int blocks = (n + NUM_THREADS - 1) / NUM_THREADS;
     int sqrt_num_threads = floor(sqrt(NUM_THREADS));
     int bin_blks = (cross + sqrt_num_threads - 1 ) / sqrt_num_threads;
     for( int step = 0; step < NSTEPS; step++ )
@@ -193,11 +193,11 @@ int main( int argc, char **argv )
         //
 
 
-        compute_forces_gpu << blks, NUM_THREADS >> (d_particles, gpu_bins, n_rows, n_cols, bin_side, n);
+        compute_forces_gpu << blocks, NUM_THREADS >> (d_particles, gpu_bins, n_rows, n_cols, bin_side, n);
         //
         //  move particles
         //
-        move_gpu << blks, NUM_THREADS >> (d_particles, n, size);
+        move_gpu << blocks, NUM_THREADS >> (d_particles, n, size);
         cudaThreadSynchronize();
 
 
