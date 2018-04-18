@@ -109,7 +109,7 @@ __global__ void compute_forces_gpu(particle_t * particles, int n, particle_t * b
  //   }
 	
 	int i = lowi;
-	int j = lowj
+	int j = lowj;
 	
 	while(i <= highi){
 		
